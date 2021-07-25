@@ -1,7 +1,9 @@
-///////// Set your properties /////////////////
-const sharedSpreadId = '1NT9H4uQ7Jyzn0df7ZZPNtHuXM3Sf_Lm6eGFNxRa1wPI'
-const sharedFolderId = '1derhMC8Aoq8ULDoZ0Vde94_e3XjzJGlo'
-///////////////////////////////////////////////
+///////////////// Import Variables ////////////
+var scriptProperties = PropertiesService.getScriptProperties()
+
+const sharedSpreadId = scriptProperties.getProperty('sharedSpreadId')
+const sharedFolderId = scriptProperties.getProperty('sharedFolderId')
+const developerKey = scriptProperties.getProperty('developerKey')
 
 const driveFolder = DriveApp.getFolderById(sharedFolderId)
 const spreadsheet = SpreadsheetApp.openById(sharedSpreadId)
@@ -13,6 +15,7 @@ const expirationRow = 5
 const versionRow = 7
 
 ///////////////// Trigger ////////////////////////////
+
 function removeExpiredFiles() {
     var todayTime = new Date().getTime()
     var range = spreadsheet.getDataRange()
@@ -84,65 +87,71 @@ const customMessage = (
 }
 
 function uploadFromDrive(e: any) {
-    // Read Form inputs
-    var arr = e['array[]'] as string[] | string
-    var ids = e.fileId as string
-    var expiration = e.expiration as string
-    var message = e.message as string
-    // Get Files ids and emails
-    var emails = arr.toString().split(',')
-    var fileIds = ids.split(',')
+    try {
+        // Read Form inputs
+        var arr = e['array[]'] as string[] | string
+        var ids = e.fileId as string
+        var expiration = e.expiration as string
+        var message = e.message as string
+        // Get Files ids and emails
+        var emails = arr.toString().split(',')
+        var fileIds = ids.split(',')
 
-    if (fileIds.length == 1) {
-        var fileId = fileIds[0]
-        try {
-            // is file
-            var file = DriveApp.getFileById(fileId)
-            var version = getVersions(fileId)
-            var versionName = version > 0 ? `Version${version}_` : ''
-            var newName = `${versionName}${file.getName()}`
+        if (fileIds.length == 1) {
+            var fileId = fileIds[0]
+            try {
+                // is file
+                var file = DriveApp.getFileById(fileId)
+                var version = getVersions(fileId)
+                var versionName = version > 0 ? `Version${version}_` : ''
+                var newName = `${versionName}${file.getName()}`
 
-            var copy = file.makeCopy(newName, driveFolder)
+                var copy = file.makeCopy(newName, driveFolder)
 
-            shareFileToUsers(
-                emails,
-                fileId,
-                copy.getId(),
-                newName,
-                expiration,
-                version,
-                message
-            )
-        } catch (error) {
-            // is folder
-            var {
-                id: folderId,
-                copyId: copyId,
-                name: folderName,
-                version: version_,
-            } = copySingleFolder(fileIds[0])
+                shareFileToUsers(
+                    emails,
+                    fileId,
+                    copy.getId(),
+                    newName,
+                    expiration,
+                    version,
+                    message
+                )
+            } catch (error) {
+                // is folder
+                var {
+                    id: folderId,
+                    copyId: copyId,
+                    name: folderName,
+                    version: version_,
+                } = copySingleFolder(fileIds[0])
+                shareFolderToUsers(
+                    emails,
+                    folderId,
+                    copyId,
+                    folderName,
+                    expiration,
+                    message,
+                    version_
+                )
+            }
+        } else {
+            // Find folder where files are
+            var { id: folderId_, name: folderName_ } =
+                copyMultipleFiles(fileIds)
             shareFolderToUsers(
                 emails,
-                folderId,
-                copyId,
-                folderName,
+                folderId_,
+                folderId_,
+                folderName_,
                 expiration,
                 message,
-                version_
+                0
             )
         }
-    } else {
-        // Find folder where files are
-        var { id: folderId_, name: folderName_ } = copyMultipleFiles(fileIds)
-        shareFolderToUsers(
-            emails,
-            folderId_,
-            folderId_,
-            folderName_,
-            expiration,
-            message,
-            0
-        )
+        return true
+    } catch (error) {
+        throw new Error('Whoops!')
     }
 }
 
@@ -288,7 +297,6 @@ function shareFileToUser(
 }
 
 /////////// Google Drive Picker /////////////////////////
-
 function onOpen() {
     SpreadsheetApp.getUi()
         .createMenu('Picker')
@@ -297,7 +305,7 @@ function onOpen() {
 }
 
 function showPicker() {
-    var html = HtmlService.createHtmlOutputFromFile('dialog.html')
+    var html = HtmlService.createHtmlOutputFromFile('form.html')
         .setWidth(600)
         .setHeight(425)
         .setSandboxMode(HtmlService.SandboxMode.IFRAME)
@@ -306,9 +314,15 @@ function showPicker() {
 
 function getOAuthToken() {
     DriveApp.getRootFolder()
-    return ScriptApp.getOAuthToken()
+    return [ScriptApp.getOAuthToken(), developerKey]
 }
 
+function getDeveloperKey() {
+    return developerKey
+}
+function getSpreadsheetURL() {
+    return spreadsheet.getUrl()
+}
 ///////////////// DO GET ///////////////////////////////////
 function doGet() {
     return HtmlService.createTemplateFromFile('form.html')
