@@ -102,6 +102,7 @@ function uploadFromDrive(e: any) {
             try {
                 // is file
                 var file = DriveApp.getFileById(fileId)
+
                 var version = getVersions(fileId)
                 var versionName = version > 0 ? `Version${version}_` : ''
                 var newName = `${versionName}${file.getName()}`
@@ -288,13 +289,14 @@ function shareFileToUser(
             supportsAllDrives: true,
         }
     )
-    Drive.Permissions.patch(
-        {
-            expirationDate: expiration.toISOString(),
-        },
-        fileId,
-        permission.id
-    )
+    // New version of Drive might add expiration date
+    // Drive.Permissions.patch(
+    //     {
+    //         expirationDate: expiration.toISOString(),
+    //     },
+    //     fileId,
+    //     permission.id
+    // )
 }
 
 /////////// Google Drive Picker /////////////////////////
