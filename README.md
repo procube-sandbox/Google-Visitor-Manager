@@ -10,7 +10,7 @@
 
 -   The shared file permission will be revoked automatically when the specified date comes
 
--   Every day at `1:00 AM`, the rows of the expired files inside your `Spreadsheet` will be deleted, and the shared file will be deleted from your shared folder.
+-   Every day at `1:00 AM`, the rows of the expired files inside your `Spreadsheet` will be updated with a expired flag, and the shared file will be deleted from your shared folder.
 
 -   Non-google users can be access to the shared file(s)
 
@@ -26,7 +26,19 @@
 
 -   A folder to store the a copy of the file(s) you want to share (`sharedFolderId`)
 -   A spreadsheet to keep track of your shared files (`sharedSpreadId`) with headers in the first row
-    -   Original | File ID | Copy File ID | Name | Shared Emails | Extra Message | Expiration Date ISO | Shared Date | Version
+    -   Original File ID | Copy File ID | Name | Shared Emails | Extra Message | Expiration Date ISO | Expiration Date JST | Shared Date JST | Version | Expired
+
+## Folder Structure
+
+    .
+    ├── 1_propertyService.ts                   # Set keys to your project
+    ├── 2_Code.ts                              # Main file
+    ├── form.html                              # HTML form
+    ├── package.json
+    ├── tsconfig.json
+    ├── README.md
+    ├── appsscript.json
+    └── .clasp.json
 
 ## Installation
 
@@ -50,7 +62,7 @@
         - \*googleusercontent.com/\*
     - API restrictions -> Don't restrict key
 
-4. Create a new file `1_propertyService.ts`(Google apps script run files alphabetically, so it will run first this file then go to `2_Code.ts`) and add the following lines of code using your own ids and key (This file contains sensitive information 🔑, DON'T EXPOSE YOUR SENSITIVE INFORMATION 🚨)
+4. Create a new file `1_propertyService.ts`(Google apps script run files alphabetically, so it will run first this file then go to `2_Code.ts`) and add the following lines of code using your own ids and key (This file contains sensitive information 🔑, DON'T EXPOSE YOUR SENSITIVE INFORMATION 🚨). `1_propertyService.ts` is the first script that is run, this will set properties to your Google Apps Script, so you will be able to use them in any other script.
 
     ```ts
     var scriptProperties = PropertiesService.getScriptProperties()
