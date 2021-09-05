@@ -1,18 +1,21 @@
 {
-  "name": "google-visitor-manager",
-  "version": "1.0.0",
-  "main": "index.js",
-  "license": "MIT",
-  "dependencies": {
-    "@google/clasp": "^2.3.0"
-  },
-  "devDependencies": {
-    "@types/google-apps-script": "^1.0.31",
-    "typescript": "^4.2.4"
-  },
-  "prettier": {
-    "tabWidth": 4,
-    "semi": false,
-    "singleQuote": true
-  }
+    "name": "google-visitor-manager",
+    "version": "1.0.0",
+    "main": "index.js",
+    "license": "MIT",
+    "dependencies": {},
+    "scripts": {
+        "push": "yarn clasp push",
+        "deploy": "yarn clasp push; yarn clasp deploy;yarn clasp open --webapp <<< 0x0A "
+    },
+    "devDependencies": {
+        "@types/google-apps-script": "^1.0.37",
+        "typescript": "^4.2.4",
+        "@google/clasp": "^2.4.1"
+    },
+    "prettier": {
+        "tabWidth": 4,
+        "semi": false,
+        "singleQuote": true
+    }
 }

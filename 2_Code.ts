@@ -12,36 +12,68 @@ const fileIdRow = 0
 const copyIdRow = 1
 const emailRow = 3
 const expirationRow = 5
-const versionRow = 7
+const expirationJSTRow = 6
+const versionRow = 8
+const isExpiredColumn = 'J'
 
+const rowTwoSpreadRange = 'A2:I2'
+
+const timeoutInMillis = 10000
 ///////////////// Trigger ////////////////////////////
 
 function removeExpiredFiles() {
-    var todayTime = new Date().getTime()
-    var range = spreadsheet.getDataRange()
-    var sheet = range.getValues()
-    var values = sheet.slice(1, sheet.length)
-    var expiredRows = []
-    var count = 0
-    values.forEach(function (row, index) {
-        var copyId = row[copyIdRow]
-        var expiration = row[expirationRow]
-        var expirationDate = new Date(expiration)
-        // If expired Remove Copy file
-        if (expirationDate.getTime() < todayTime) {
-            // Remove File
-            let expiredFile = DriveApp.getFileById(copyId)
-            expiredFile.setTrashed(true)
-            // Add expired row
-            expiredRows.push(index)
-        }
-    })
-    expiredRows.forEach(function (index) {
-        spreadsheet.deleteRow(index + 2 - count)
-        count += 1
+    AddLock(() => {
+        var todayTime = new Date().getTime()
+        var range = spreadsheet.getDataRange()
+        var sheet = range.getValues()
+        var values = sheet.slice(1, sheet.length)
+        var expiredRows = []
+        var count = 0
+        var vl = values[0]
+
+        values.forEach(function (row, index) {
+            var copyId = row[copyIdRow]
+            var expiration = row[expirationRow]
+            var expirationDate = new Date(expiration)
+            // If expired Remove Copy file
+            if (expirationDate.getTime() < todayTime) {
+                // Remove File
+                let expiredFile = DriveApp.getFileById(copyId)
+                expiredFile.setTrashed(true)
+                // Add expired row
+                expiredRows.push(index)
+                spreadsheet
+                    .getRange(
+                        `${isExpiredColumn}${index + 2}:${isExpiredColumn}${
+                            index + 2
+                        }`
+                    )
+                    .setValues([['True']])
+            }
+        })
+        expiredRows.forEach(function (index) {
+            spreadsheet.deleteRow(index + 2 - count)
+            count += 1
+        })
     })
 }
-
+/////////////////// LockService ///////////////////////
+function AddLock(callback) {
+    // Get a script lock, because we're about to modify a shared resource.
+    var lock = LockService.getScriptLock()
+    // Attempts to acquire the lock, timing out after the provided number of milliseconds.
+    var success = lock.tryLock(timeoutInMillis)
+    if (!success) {
+        Logger.log('Could not obtain lock after 10 seconds.')
+        AddLock(() => {
+            callback()
+        })
+    } else {
+        callback()
+        // Release the lock so that other processes can continue.
+        lock.releaseLock()
+    }
+}
 /////////////////// Spreadsheet ///////////////////////
 function getVersions(myFileId: string) {
     var range = spreadsheet.getDataRange()
@@ -70,7 +102,11 @@ function getViewers(fileId: string) {
 }
 
 function modifySpread(contents: any[]) {
-    spreadsheet.appendRow(contents)
+    AddLock(() => {
+        spreadsheet.insertRowBefore(2)
+        spreadsheet.getRange(rowTwoSpreadRange).setValues([contents])
+        // spreadsheet.appendRow(contents)
+    })
 }
 
 ////////////////// Share File ////////////////////
@@ -235,7 +271,8 @@ function shareFileToUsers(
         emails.toString(),
         extraMessage,
         date.toISOString(),
-        new Date().toTimeString(),
+        date.toLocaleString(),
+        new Date().toLocaleString(),
         version,
     ])
 }
@@ -264,7 +301,8 @@ function shareFolderToUsers(
         emails.toString(),
         extraMessage,
         date.toISOString(),
-        new Date().toTimeString(),
+        date.toLocaleString(),
+        new Date().toLocaleString(),
         version,
     ])
 }
