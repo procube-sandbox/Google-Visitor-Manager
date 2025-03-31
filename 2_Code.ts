@@ -43,17 +43,13 @@ function removeExpiredFiles() {
                 // Add expired row
                 expiredRows.push(index)
                 spreadsheet
-                    .getRange(
-                        `${isExpiredColumn}${index + 2}:${isExpiredColumn}${
-                            index + 2
-                        }`
-                    )
+                    .getRange(`${isExpiredColumn}${index + 2}:${isExpiredColumn}${index + 2}`)
                     .setValues([['True']])
+                // Set background color to gray (#cccccc)
+                spreadsheet
+                    .getRange(`A${index + 2}:J${index + 2}`)
+                    .setBackground('#cccccc');
             }
-        })
-        expiredRows.forEach(function (index) {
-            spreadsheet.deleteRow(index + 2 - count)
-            count += 1
         })
     })
 }
